@@ -9,7 +9,7 @@ Wire protocol of pyniryo 1.0.5 (pyniryo/api/communication_functions.py): a 2-byt
 length ('@H') followed by a JSON request {"command": NAME, "param_list": [...]}. The reply uses
 the same framing and holds the repr of {"status": "OK" | "KO", "list_ret_param": [...]}.
 
-The whole module is skipped when pyniryo is not installed (it is not in install_requires, see
+Every test in this module is skipped when pyniryo is not installed (it is not in install_requires, see
 docs/drivers/ned1.md).
 """
 
@@ -24,11 +24,18 @@ import pytest
 try:
     import pyniryo
 except ImportError:
-    pytest.skip(
+    pyniryo = None
+
+# Never skip at module level (pytest.skip(allow_module_level=True) / pytest.importorskip): the
+# ROS `launch_testing` pytest plugin imports every test file while collecting, and the Skipped
+# exception escapes it and skips the whole test/ package (colcon then reports "1 skipped").
+pytestmark = pytest.mark.skipif(
+    pyniryo is None,
+    reason=(
         "pyniryo is not installed: skipping the real-client tests "
-        "(pip install --no-deps \"pyniryo==1.0.5\" and pip install numpy opencv-python, see docs/drivers/ned1.md)",
-        allow_module_level=True,
-    )
+        "(pip install --no-deps \"pyniryo==1.0.5\" and pip install numpy opencv-python, see docs/drivers/ned1.md)"
+    ),
+)
 
 from sutura.drivers.ned1_driver import Ned1ArmDriver  # noqa: E402
 
